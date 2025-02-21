@@ -12,3 +12,4 @@ class Link(Base):
     created_by = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="links")
+    shares = relationship("LinkShare", back_populates="link")
