@@ -1,14 +1,14 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from app.db.database import Base
+from app.models.association import link_shares
+
 
 class Link(Base):
-    __tablename__ = "links"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    __tablename__ = 'links'
+    id = Column(Integer, primary_key=True)
     url = Column(String)
+    name = Column(String)
     category = Column(String)
-    created_by = Column(Integer, ForeignKey("users.id"))
 
-    owner = relationship("User", back_populates="links")
+    shared_users = relationship('User', secondary=link_shares, back_populates='shared_links')
