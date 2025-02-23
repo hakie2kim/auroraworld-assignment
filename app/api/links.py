@@ -25,6 +25,16 @@ def update_link(link_id: int, link: LinkUpdate, db: Session = Depends(get_db), c
     db_link = db.query(Link).filter(Link.id == link_id, Link.created_by == current_user.id).first()
     if not db_link:
         raise HTTPException(status_code=404, detail="Link not found")
+
+    if db_link.created_by != current_user.id:
+        share = db.query(link_shares).filter(
+            link_shares.c.link_id == db_link.id,
+            link_shares.c.user_id == current_user.id,
+            link_shares.c.can_write == True
+        ).first()
+        if not share:
+            raise HTTPException(status_code=403, detail="Not authorized to update this link")
+
     for key, value in link.dict(exclude_unset=True).items():
         setattr(db_link, key, value)
     db.commit()
@@ -36,6 +46,11 @@ def delete_link(link_id: int, db: Session = Depends(get_db), current_user: User 
     db_link = db.query(Link).filter(Link.id == link_id, Link.created_by == current_user.id).first()
     if not db_link:
         raise HTTPException(status_code=404, detail="Link not found")
+
+    # 인가 처리
+    if db_link.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this link")
+
     db.delete(db_link)
     db.commit()
     return {"detail": "Link deleted successfully"}
@@ -50,6 +65,9 @@ def share_link(
     db_link = db.query(Link).filter(Link.id == link_id, Link.created_by == current_user.id).first()
     if not db_link:
         raise HTTPException(status_code=404, detail="Link not found or you don't have permission")
+
+    if db_link.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to share this link")
 
     share_with_user = db.query(User).filter(User.id == share_data.user_id).first()
     if not share_with_user:
