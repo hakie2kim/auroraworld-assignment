@@ -11,3 +11,4 @@ class User(Base):
     hashed_password = Column(String)
 
     shared_links = relationship('Link', secondary=link_shares, back_populates='shared_users')
+    owned_links = relationship("Link", back_populates="owner")
