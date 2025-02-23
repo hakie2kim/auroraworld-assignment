@@ -23,4 +23,5 @@ class LinkUpdate(BaseModel):
 
 class LinkShareCreate(BaseModel):
     user_id: int
+    can_read: bool = True
     can_write: bool = False

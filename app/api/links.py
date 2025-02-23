@@ -58,9 +58,10 @@ def share_link(
     ).first()
 
     if existing_share:
+        existing_share.can_read = share_data.can_read
         existing_share.can_write = share_data.can_write
     else:
-        new_share = link_shares(link_id=link_id, user_id=share_data.user_id, can_write=share_data.can_write)
+        new_share = link_shares(link_id=link_id, user_id=share_data.user_id, can_read=share_data.can_read, can_write=share_data.can_write)
         db.add(new_share)
 
     db.commit()
