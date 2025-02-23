@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.db.database import get_db
@@ -67,3 +70,31 @@ def share_link(
     db.commit()
     db.refresh(db_link)
     return db_link
+
+@router.get("/links", response_model=List[LinkOut])
+def search_links(
+        name: Optional[str] = Query(None, description="Search by link name"),
+        category: Optional[str] = Query(None, description="Filter by category"),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    query = db.query(Link).filter(
+        or_(
+            Link.created_by == current_user.id,
+            Link.id.in_(
+                db.query(link_shares.c.link_id).filter(
+                    link_shares.c.user_id == current_user.id,
+                    link_shares.c.can_read == True
+                )
+            )
+        )
+    )
+
+    if name:
+        query = query.filter(Link.name.ilike(f"%{name}%"))
+
+    if category:
+        query = query.filter(Link.category == category)
+
+    links = query.all()
+    return links
