@@ -15,3 +15,8 @@ class LinkOut(LinkBase):
 
     class Config:
         orm_mode = True
+
+class LinkUpdate(BaseModel):
+    name: Optional[str] = None
+    url: Optional[str] = None
+    category: Optional[str] = None
