@@ -1,7 +1,9 @@
+import time
 from datetime import datetime, timedelta
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from fastapi_utils.tasks import repeat_every
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -17,6 +19,9 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# 블랙리스트를 저장할 set - 실제 구현에서는 데이터베이스 사용
+token_used = set()
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -48,3 +53,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
     return user
+
+@repeat_every(seconds=60*60*24)  # 24시간마다 실행
+def clean_token_blacklist():
+    token_used.clear()

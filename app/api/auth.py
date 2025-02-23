@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.core.security import create_access_token, get_password_hash, verify_password
+from app.core.security import create_access_token, get_password_hash, verify_password, token_used
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, Token
@@ -29,4 +29,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     access_token = create_access_token(data={"sub": user.username})
+
+    if access_token in token_used:
+        raise HTTPException(status_code=401, detail="Token is blacklisted")
+
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/logout")
+async def logout(token: str = Depends(oauth2_scheme)):
+    token_used.add(token)
+    return {"message": "Successfully logged out"}
